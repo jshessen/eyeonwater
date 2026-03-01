@@ -25,9 +25,9 @@ def eow_data(mock_account, mock_client) -> EyeOnWaterData:
             return_value=mock_client,
         ),
         patch(
-            "custom_components.eyeonwater.coordinator.get_last_imported_time",
+            "custom_components.eyeonwater.coordinator.get_last_imported_stat",
             new_callable=AsyncMock,
-            return_value=None,
+            return_value=(None, None, None),
         ),
     ):
         return EyeOnWaterData(hass, mock_account)
@@ -40,9 +40,9 @@ def eow_data(mock_account, mock_client) -> EyeOnWaterData:
 async def test_setup_fetches_meters(eow_data, mock_account) -> None:
     """setup() should populate the meters list."""
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=None,
+        return_value=(None, None, None),
     ):
         await eow_data.setup()
     mock_account.fetch_meters.assert_awaited_once()
@@ -56,9 +56,9 @@ async def test_setup_fetches_meters(eow_data, mock_account) -> None:
 async def test_read_meters_success(eow_data) -> None:
     """read_meters should call read_meter_info + read_historical_data."""
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=None,
+        return_value=(None, None, None),
     ):
         await eow_data.setup()
     with patch(
@@ -75,9 +75,9 @@ async def test_read_meters_success(eow_data) -> None:
 async def test_read_meters_api_error_raises_update_failed(eow_data) -> None:
     """API errors should be wrapped in UpdateFailed."""
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=None,
+        return_value=(None, None, None),
     ):
         await eow_data.setup()
     eow_data.meters[0].read_meter_info.side_effect = EyeOnWaterAPIError("fail")
@@ -90,9 +90,9 @@ async def test_read_meters_api_error_raises_update_failed(eow_data) -> None:
 async def test_read_meters_auth_error_raises_update_failed(eow_data) -> None:
     """Auth errors should be wrapped in UpdateFailed."""
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=None,
+        return_value=(None, None, None),
     ):
         await eow_data.setup()
     eow_data.meters[0].read_meter_info.side_effect = EyeOnWaterAuthError("denied")
@@ -108,9 +108,9 @@ async def test_read_meters_auth_error_raises_update_failed(eow_data) -> None:
 async def test_import_historical_data(eow_data) -> None:
     """import_historical_data should read data and call async_import_statistics."""
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=None,
+        return_value=(None, None, None),
     ):
         await eow_data.setup()
 
@@ -129,9 +129,9 @@ async def test_import_historical_data(eow_data) -> None:
 async def test_read_meters_imports_statistics(eow_data) -> None:
     """read_meters should import new statistics automatically."""
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=None,
+        return_value=(None, None, None),
     ):
         await eow_data.setup()
 
@@ -150,9 +150,9 @@ async def test_read_meters_skips_import_when_no_new_data(eow_data) -> None:
     """read_meters should skip import if no data is newer than last import."""
     last_time = datetime.datetime(2026, 1, 1, tzinfo=datetime.UTC)
     with patch(
-        "custom_components.eyeonwater.coordinator.get_last_imported_time",
+        "custom_components.eyeonwater.coordinator.get_last_imported_stat",
         new_callable=AsyncMock,
-        return_value=last_time,
+        return_value=(last_time, None, None),
     ):
         await eow_data.setup()
 

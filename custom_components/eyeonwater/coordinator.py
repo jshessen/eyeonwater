@@ -12,7 +12,7 @@ from pyonwater import Account, Client, EyeOnWaterAPIError, EyeOnWaterAuthError, 
 from .statistic_helper import (
     convert_statistic_data,
     filter_newer_data,
-    get_last_imported_time,
+    get_last_imported_stat,
     get_statistic_metadata,
 )
 
@@ -44,10 +44,8 @@ class EyeOnWaterData:
         _LOGGER.debug("Discovered %i meter(s)", len(self.meters))
 
         for meter in self.meters:
-            self._last_imported_times[meter.meter_id] = await get_last_imported_time(
-                self.hass,
-                meter,
-            )
+            last_stat = await get_last_imported_stat(self.hass, meter)
+            self._last_imported_times[meter.meter_id] = last_stat[0]
 
     async def read_meters(self, days_to_load: int = 3) -> list[Meter]:
         """Read each meter."""
