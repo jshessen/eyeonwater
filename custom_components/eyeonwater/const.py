@@ -2,8 +2,13 @@
 
 from datetime import timedelta
 
+from aiohttp import ClientTimeout
+
 SCAN_INTERVAL = timedelta(minutes=15)
 DEBOUNCE_COOLDOWN = 60 * 60  # Seconds
+
+# API client timeout configuration
+CLIENT_TIMEOUT = ClientTimeout(total=30, connect=10, sock_read=20)
 
 DATA_COORDINATOR = "coordinator"
 DATA_SMART_METER = "smart_meter_data"

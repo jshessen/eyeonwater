@@ -1,6 +1,7 @@
 {
   "domain": "eyeonwater",
   "name": "EyeOnWater",
+  "after_dependencies": ["energy"],
   "codeowners": [],
   "config_flow": true,
   "dependencies": ["recorder"],
