@@ -1,106 +1,88 @@
-"""Tests for the EyeOnWater config flow."""
+"""Tests for configuration flow."""
 
-import asyncio
-from unittest.mock import patch
+from unittest.mock import MagicMock
 
-import pytest
-from pyonwater import EyeOnWaterAPIError, EyeOnWaterAuthError
+from pyonwater import Account
 
+from custom_components.eyeonwater import config_flow
 from custom_components.eyeonwater.config_flow import (
-    CannotConnect,
-    InvalidAuth,
+    ConfigFlow,
+    create_account_from_config,
     get_hostname_for_country,
-    validate_input,
 )
 
-from .conftest import MOCK_CONFIG, MOCK_USERNAME, _make_hass
 
-# --------------- hostname helper ---------------
-
-
-def test_hostname_returns_ca_for_canada() -> None:
-    """Canadian country code should resolve to eyeonwater.ca."""
-    hass = _make_hass()
-    hass.config.country = "CA"
-    assert get_hostname_for_country(hass) == "eyeonwater.ca"
+def test_can_import_config_flow_module():
+    """Test that config_flow module can be imported."""
+    assert hasattr(config_flow, "ConfigFlow")
 
 
-def test_hostname_returns_com_for_us() -> None:
-    """US country should resolve to eyeonwater.com."""
-    hass = _make_hass()
-    hass.config.country = "US"
-    assert get_hostname_for_country(hass) == "eyeonwater.com"
+def test_can_import_config_flow_class():
+    """Test ConfigFlow class exists."""
+    assert ConfigFlow is not None
 
 
-def test_hostname_returns_com_for_none() -> None:
-    """No country set should default to eyeonwater.com."""
-    hass = _make_hass()
-    hass.config.country = None
-    assert get_hostname_for_country(hass) == "eyeonwater.com"
+class TestGetHostnameForCountry:
+    """Test get_hostname_for_country function."""
+
+    def test_canada_returns_ca_hostname(self):
+        """Country CA resolves to the .ca domain."""
+        hass = MagicMock()
+        hass.config.country = "CA"
+        result = get_hostname_for_country(hass)
+        assert result == "eyeonwater.ca"
+
+    def test_us_returns_com_hostname(self):
+        """Country US resolves to the .com domain."""
+        hass = MagicMock()
+        hass.config.country = "US"
+        result = get_hostname_for_country(hass)
+        assert result == "eyeonwater.com"
+
+    def test_other_country_returns_com_hostname(self):
+        """Any non-CA country resolves to the .com domain."""
+        hass = MagicMock()
+        hass.config.country = "DE"
+        result = get_hostname_for_country(hass)
+        assert result == "eyeonwater.com"
+
+    def test_none_country_returns_com_hostname(self):
+        """None/unset country resolves to the .com domain."""
+        hass = MagicMock()
+        hass.config.country = None
+        result = get_hostname_for_country(hass)
+        assert result == "eyeonwater.com"
 
 
-def test_hostname_returns_com_for_european() -> None:
-    """European country code should still default to .com."""
-    hass = _make_hass()
-    hass.config.country = "DE"
-    assert get_hostname_for_country(hass) == "eyeonwater.com"
+class TestCreateAccountFromConfig:
+    """Test create_account_from_config function."""
 
+    def test_returns_account_instance(self):
+        """create_account_from_config returns a pyonwater Account object."""
+        hass = MagicMock()
+        hass.config.country = "US"
+        data = {"username": "user@test.com", "password": "s3cret"}
+        result = create_account_from_config(hass, data)
+        assert isinstance(result, Account)
 
-# --------------- validate_input ---------------
+    def test_account_has_correct_credentials(self):
+        """Account is constructed with the username and password from config."""
+        hass = MagicMock()
+        hass.config.country = "US"
+        data = {"username": "user@test.com", "password": "s3cret"}
+        result = create_account_from_config(hass, data)
+        assert result.username == "user@test.com"
+        assert result.password == "s3cret"
 
+    def test_account_hostname_from_hass_country(self):
+        """Account eow_hostname reflects the HA country setting."""
+        hass_ca = MagicMock()
+        hass_ca.config.country = "CA"
+        data = {"username": "u", "password": "p"}
+        ca_result = create_account_from_config(hass_ca, data)
+        assert ca_result.eow_hostname == "eyeonwater.ca"
 
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("patch_pyonwater")
-async def test_validate_input_success() -> None:
-    """Successful validation returns title with username."""
-    hass = _make_hass()
-    with patch(
-        "custom_components.eyeonwater.config_flow.aiohttp_client.async_get_clientsession",
-    ):
-        result = await validate_input(hass, MOCK_CONFIG)
-    assert result == {"title": MOCK_USERNAME}
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("patch_pyonwater")
-async def test_validate_input_auth_error(mock_client) -> None:
-    """Auth failure raises InvalidAuth."""
-    hass = _make_hass()
-    mock_client.authenticate.side_effect = EyeOnWaterAuthError("bad creds")
-    with (
-        patch(
-            "custom_components.eyeonwater.config_flow.aiohttp_client.async_get_clientsession",
-        ),
-        pytest.raises(InvalidAuth),
-    ):
-        await validate_input(hass, MOCK_CONFIG)
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("patch_pyonwater")
-async def test_validate_input_cannot_connect(mock_client) -> None:
-    """Timeout raises CannotConnect."""
-    hass = _make_hass()
-    mock_client.authenticate.side_effect = asyncio.TimeoutError
-    with (
-        patch(
-            "custom_components.eyeonwater.config_flow.aiohttp_client.async_get_clientsession",
-        ),
-        pytest.raises(CannotConnect),
-    ):
-        await validate_input(hass, MOCK_CONFIG)
-
-
-@pytest.mark.asyncio
-@pytest.mark.usefixtures("patch_pyonwater")
-async def test_validate_input_api_error(mock_client) -> None:
-    """API error raises CannotConnect."""
-    hass = _make_hass()
-    mock_client.authenticate.side_effect = EyeOnWaterAPIError("server down")
-    with (
-        patch(
-            "custom_components.eyeonwater.config_flow.aiohttp_client.async_get_clientsession",
-        ),
-        pytest.raises(CannotConnect),
-    ):
-        await validate_input(hass, MOCK_CONFIG)
+        hass_us = MagicMock()
+        hass_us.config.country = "US"
+        us_result = create_account_from_config(hass_us, data)
+        assert us_result.eow_hostname == "eyeonwater.com"

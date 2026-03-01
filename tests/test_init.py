@@ -33,7 +33,7 @@ def _mock_config_entry() -> ConfigEntry:
 
 @pytest.fixture
 def config_entry() -> ConfigEntry:
-    """Provide a fake ConfigEntry."""
+    """Create a mock config entry for testing."""
     return _mock_config_entry()
 
 
