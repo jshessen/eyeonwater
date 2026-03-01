@@ -22,6 +22,13 @@ IMPORT_HISTORICAL_DATA_SERVICE_NAME = "import_historical_data"
 IMPORT_HISTORICAL_DATA_DAYS_NAME = "days"
 IMPORT_HISTORICAL_DATA_DAYS_DEFAULT = 365
 
+REPLAY_SCENARIO_SERVICE_NAME = "replay_scenario"
+
+VALIDATE_MONOTONIC_SERVICE_NAME = "validate_statistics_monotonic"
+RESET_STATISTICS_SERVICE_NAME = "reset_statistics"
+RESET_STATISTICS_CONFIRM_NAME = "confirm"
+READ_METER_SERVICE_NAME = "read_meter"
+
 # Statistics validation limits
 STATISTICS_VALIDATION_BATCH_SIZE = 1000  # Rows per database query batch
 MAX_VIOLATION_LOG_DISPLAY = 10  # Maximum violations to log before truncating
