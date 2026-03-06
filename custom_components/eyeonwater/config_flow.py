@@ -2,7 +2,7 @@
 
 import logging
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Self
 
 import voluptuous as vol
 from aiohttp import ClientError
@@ -79,6 +79,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EyeOnWater."""
 
     VERSION = 1
+
+    def is_matching(self, other_flow: Self) -> bool:
+        """Return False — credentials-based flow; no discovery matching needed."""
+        return False
 
     async def async_step_user(
         self,
